@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Окно входа - ООО «Обувь»</title>
+    <style>
+        /* Стили из Прил_3_ОЗ_КОД */
+        :root {
+            --primary-bg: #FFFFFF;
+            --secondary-bg: #7FFF00;
+            --accent-color: #00FA9A;
+        }
+        body {
+            font-family: "Times New Roman", serif;
+            background-color: var(--primary-bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            width: 350px;
+            padding: 20px;
+            background-color: var(--primary-bg);
+            border: 1px solid #ccc;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        h2 {
+            background-color: var(--secondary-bg);
+            padding: 10px;
+            text-align: center;
+            font-size: 1.4em;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        label, input, button {
+            display: block;
+            width: 100%;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+        input[type="text"], input[type="password"] {
+            padding: 8px;
+            border: 1px solid #ccc;
+        }
+        button {
+            padding: 10px;
+            cursor: pointer;
+            border: none;
+            font-size: 1em;
+            text-transform: uppercase;
+        }
+        .login-btn {
+            background-color: var(--accent-color);
+            margin-top: 20px;
+        }
+        .guest-btn {
+            background-color: var(--primary-bg);
+            border: 1px solid var(--accent-color);
+            color: black;
+            margin-top: 10px; /* Добавим небольшой отступ */
+        }
+        .error {
+            color: red;
+            text-align: center;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>АВТОРИЗАЦИЯ</h2>
+        {% if error %}
+            <p class="error">{{ error }}</p>
+        {% endif %}
+        
+        <form method="POST">
+            <label for="login">Логин:</label>
+            <input type="text" id="login" name="login" required>
+
+            <label for="password">Пароль:</label>
+            <input type="password" id="password" name="password" required>
+
+            <button type="submit" class="login-btn">
+                Войти
+            </button>
+            
+            <button type="submit" name="guest_login" class="guest-btn">
+                Гость
+            </button>
+        </form>
+    </div>
+</body>
+</html>
