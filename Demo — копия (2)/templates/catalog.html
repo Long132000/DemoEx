@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block title %}Каталог товаров{% endblock %}
+{% block header_title %}Каталог товаров ({{ role }}){% endblock %}
+
+{% block head_styles %}
+<style>
+    .filter-form {
+        margin-bottom: 20px;
+        padding: 15px;
+        border: 1px solid #ccc;
+        background-color: #f9f9f9;
+        display: flex;
+        gap: 15px;
+        align-items: center;
+        flex-wrap: wrap; 
+    }
+    .filter-form label, .filter-form select, .filter-form input, .filter-form button, .filter-form a {
+        font-family: "Times New Roman", serif;
+        padding: 8px 15px;
+        border-radius: 3px;
+        text-decoration: none;
+        color: black;
+        border: none;
+        cursor: pointer;
+        display: inline-block;
+    }
+    
+    .product-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+    }
+    .product-item {
+        border: 1px solid #ccc;
+        padding: 15px;
+        border-radius: 5px;
+        transition: transform 0.2s;
+        min-height: 450px; /* Фиксированная высота для выравнивания */
+        display: flex;
+        flex-direction: column;
+    }
+    .product-item:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+    }
+    .product-item img {
+        width: 100%;
+        height: 200px; 
+        object-fit: contain; 
+        display: block;
+        margin-bottom: 10px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .product-item p {
+        flex-grow: 1; /* Чтобы информация занимала место */
+    }
+
+    /* Стили для метки скидки */
+    .discount-label {
+        font-weight: bold;
+        padding: 5px 8px;
+        border-radius: 3px;
+        display: inline-block;
+        margin-top: 10px;
+    }
+    
+    /* Класс для обычной скидки */
+    .discount-normal {
+        background-color: var(--accent-color);
+        color: black;
+    }
+    
+    /* Класс для скидки > 15% (использует --discount-high-bg) */
+    .discount-high-label {
+        background-color: var(--discount-high-bg);
+        color: white;
+    }
+    
+    /* Дополнительный класс для всего товара при большой скидке */
+    .product-item.discount-high {
+        border: 2px solid var(--discount-high-bg);
+    }
+    
+    .crud-btn-group {
+        margin-top: 15px;
+        display: flex;
+        gap: 10px;
+        /* Переопределяем стили для кнопок в группе */
+        font-family: "Times New Roman", serif;
+        padding: 0;
+    }
+    .crud-btn-group a, .crud-btn-group button {
+        padding: 8px 15px;
+        border-radius: 3px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<form method="GET" action="{{ url_for('catalog') }}" class="filter-form">
+    
+    <label for="category" style="padding: 0;">Категория:</label>
+    <select name="category" id="category">
+        {% for cat in categories %}
+        <option value="{{ cat }}" {% if cat == selected_category %}selected{% endif %}>{{ cat }}</option>
+        {% endfor %}
+    </select>
+    
+    {% if role in ['Менеджер', 'Администратор'] %}
+        <label for="sort" style="padding: 0;">Сортировка по цене:</label>
+        <select name="sort" id="sort">
+            <option value="ASC" {% if selected_sort == 'ASC' %}selected{% endif %}>По возрастанию</option>
+            <option value="DESC" {% if selected_sort == 'DESC' %}selected{% endif %}>По убыванию</option>
+        </select>
+    
+        <label for="search" style="padding: 0;">Поиск:</label>
+        <input type="text" name="search" id="search" value="{{ search_query }}" placeholder="Поиск по названию/описанию" style="padding: 8px; flex-grow: 1; max-width: 250px;">
+    {% endif %}
+
+    <button type="submit" style="background-color: var(--accent-color);">Применить</button>
+    <a href="{{ url_for('catalog') }}" style="background-color: var(--secondary-bg);">Сбросить</a>
+
+    {% if role == 'Администратор' %}
+    <a href="{{ url_for('product_add') }}" style="background-color: var(--accent-color); margin-left: auto;">Добавить товар</a>
+    {% endif %}
+    
+</form>
+
+<div class="product-list">
+    {% for product in products %}
+    
+    {% set discount_val = product.Discount | default(0) %}
+    {% set article = product.ProductArticle | default('N/A') %}
+    {% set high_discount = discount_val > 15 %}
+    {% set price = product.Price | default(0) %}
+    {% set price_after_discount = price * (1 - discount_val / 100) %}
+    
+    <div class="product-item {% if high_discount %}discount-high{% endif %}">
+        
+        <img src="{{ url_for('static', filename=product.Photo | default('picture.png')) }}" 
+             alt="{{ product.Name | default('Товар') }}" 
+             title="Артикул: {{ article }}">
+        
+        <h3>{{ product.Name | default('Нет названия') }} ({{ article }})</h3>
+        
+        <p>
+            Цена: **{{ "%.2f" | format(price) }}** руб.
+            {% if discount_val > 0 %}
+                <br>(Цена со скидкой: **{{ "%.2f" | format(price_after_discount) }}** руб.)
+            {% endif %}
+            <br>
+            Количество на складе: **{{ product.Quantity | default(0) }}**
+        </p>
+        
+        <span class="discount-label {% if high_discount %}discount-high-label{% else %}discount-normal{% endif %}">
+           Скидка: {{ discount_val }}%
+        </span>
+
+        <p>
+            Категория: {{ product.CategoryName | default('Нет данных') }}<br>
+            Производитель: {{ product.ManufacturerName | default('Нет данных') }}
+        </p>
+        
+        {% if role == 'Администратор' %}
+        <div class="crud-btn-group">
+            <a href="{{ url_for('product_edit', article=article) }}" style="background-color: var(--accent-color);">Редактировать</a>
+            <form method="POST" action="{{ url_for('product_delete', article=article) }}" onsubmit="return confirm('Вы уверены, что хотите удалить товар {{ article }}?');">
+                <button type="submit" style="background-color: red; color: white;">Удалить</button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+
+    {% if not products %}
+        <p style="text-align: center;">Товары не найдены.</p>
+    {% endif %}
+</div>
+
+{% endblock %}
